@@ -8,6 +8,10 @@ import (
 	"os"
 )
 
+type Config struct {
+	Addr string
+}
+
 type BitwardenClient struct {
 	BaseURL      string
 	SessionToken string
@@ -16,7 +20,7 @@ type BitwardenClient struct {
 
 func NewBitwardenClient(conf Config) (BitwardenClient, error) {
 	bwClient := BitwardenClient{
-		BaseURL: os.Getenv("BW_HOST"),
+		BaseURL: conf.Addr,
 	}
 
 	if os.Getenv("BW_PASSWORD") == "" {

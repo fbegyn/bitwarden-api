@@ -8,12 +8,6 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-type Config struct {
-	Bitwarden struct {
-		Addr string
-	}
-}
-
 // StartBWServe starts up the local API endpoint in the background and
 // supervises it. It also maintains the lifecycle.
 func StartBWServe(ctx context.Context) {
