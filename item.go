@@ -8,30 +8,36 @@ import (
 	"time"
 )
 
+type URI struct {
+	Match int    `json:"match,omitempty"`
+	URI   string `json:"uri,omitempty"`
+}
+
+type Login struct {
+	URIs     []URI  `json:"uris,omitempty"`
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
+	TOTP     string `json:"totp,omitempty"`
+}
+
+type Field struct {
+	Name  string `json:"name,omitempty"`
+	Value string `json:"value,omitempty"`
+	Type  int    `json:"type,omitempty"`
+}
+
 type Item struct {
-	ID             string
-	OrganizationID string
-	CollectionIDs  []string
-	FolderID       string
-	Type           int
-	Name           string
-	Notes          string
-	Favorite       bool
-	Fields         []struct {
-		Name  string
-		Value string
-		Type  int
-	}
-	Login struct {
-		URIs []struct {
-			Match int
-			URI   string
-		}
-		Username string
-		Password string
-		TOTP     string
-	}
-	Reprompt int
+	ID             string   `json:"id,omitempty"`
+	OrganizationID string   `json:"organizationid,omitempty"`
+	CollectionIDs  []string `json:"collectionid,omitempty"`
+	FolderID       string   `json:"folderid,omitempty"`
+	Type           int      `json:"type,omitempty"`
+	Name           string   `json:"name,omitempty"`
+	Notes          string   `json:"notes,omitempty"`
+	Favorite       bool     `json:"favorite,omitempty"`
+	Fields         []Field  `json:"fields,omitempty"`
+	Login          Login    `json:"login,omitempty"`
+	Reprompt       int      `json:"reprompt,omitempty"`
 }
 
 type ItemCreateResp struct {
@@ -41,8 +47,9 @@ type ItemCreateResp struct {
 	DeleteDate   time.Time
 }
 
-func (bw *BitwardenClient) CreateItem(item []byte) error {
-	req, err := http.NewRequest("POST", bw.BaseURL+"/object/item", bytes.NewBuffer(item))
+func (bw *BitwardenClient) CreateItem(item Item) error {
+	jsonItem, err := json.Marshal(item)
+	req, err := http.NewRequest("POST", bw.BaseURL+"/object/item", bytes.NewBuffer(jsonItem))
 	if err != nil {
 		return fmt.Errorf("failed to create create request: %w", err)
 	}
@@ -60,12 +67,66 @@ func (bw *BitwardenClient) CreateItem(item []byte) error {
 	return nil
 }
 
+type ItemGetResp struct {
+	Success      bool
+	Data         Item
+	RevisionDate time.Time
+	DeleteDate   time.Time
+}
+
+func (bw *BitwardenClient) GetItem(item Item) (Item, error) {
+	req, err := http.NewRequest("GET", bw.BaseURL+"/object/item/"+item.ID, nil)
+	if err != nil {
+		return Item{}, fmt.Errorf("failed to create get request: %w", err)
+	}
+	req.Header.Add("Content-Type", "application/json")
+	resp, err := bw.Client.Do(req)
+	if err != nil {
+		return Item{}, fmt.Errorf("get request caused an error: %w", err)
+	}
+	defer resp.Body.Close()
+	var getResp ItemGetResp
+	json.NewDecoder(resp.Body).Decode(&getResp)
+	if !getResp.Success {
+		return Item{}, fmt.Errorf("get operation was unsuccessful: %v", resp)
+	}
+	return getResp.Data, nil
+}
+
+type ItemUpdateResp struct {
+	Success      bool
+	Data         Item
+	RevisionDate time.Time
+	DeleteDate   time.Time
+}
+
+func (bw *BitwardenClient) UpdateItem(item Item) error {
+	jsonItem, err := json.Marshal(item)
+	req, err := http.NewRequest("PUT", bw.BaseURL+"/object/item/"+item.ID, bytes.NewBuffer(jsonItem))
+	if err != nil {
+		return fmt.Errorf("failed to create update request: %w", err)
+	}
+	req.Header.Add("Content-Type", "application/json")
+	resp, err := bw.Client.Do(req)
+	if err != nil {
+		return fmt.Errorf("update request caused an error: %w", err)
+	}
+	defer resp.Body.Close()
+	var updateResp ItemUpdateResp
+	json.NewDecoder(resp.Body).Decode(&updateResp)
+	if !updateResp.Success {
+		return fmt.Errorf("delete operation was unsuccessful: %v", resp)
+	}
+	return nil
+}
+
 type ItemDeleteResp struct {
 	Success bool
 }
 
-func (bw *BitwardenClient) DeleteItem(item []byte) error {
-	req, err := http.NewRequest("DELETE", bw.BaseURL+"/object/item", bytes.NewBuffer(item))
+func (bw *BitwardenClient) DeleteItem(item Item) error {
+	jsonItem, err := json.Marshal(item)
+	req, err := http.NewRequest("DELETE", bw.BaseURL+"/object/item/"+item.ID, bytes.NewBuffer(jsonItem))
 	if err != nil {
 		return fmt.Errorf("failed to create delete request: %w", err)
 	}

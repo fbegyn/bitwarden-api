@@ -4,19 +4,23 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
-
-	"golang.org/x/exp/slog"
+	"time"
 )
 
 // StartBWServe starts up the local API endpoint in the background and
 // supervises it. It also maintains the lifecycle.
-func StartBWServe(ctx context.Context) {
+func StartBWServe(ctx context.Context) (*exec.Cmd, error) {
 	cmd := exec.Command("bw", "serve")
 	if err := cmd.Start(); err != nil {
-		slog.Error("failed to run 'bw serve'", err, slog.String("component", "bitwarden"))
+		return nil, fmt.Errorf("failed to run 'bw serve': %w", err)
 	}
-	<-ctx.Done()
-	cmd.Process.Kill()
+	go func() {
+		<-ctx.Done()
+		cmd.Process.Kill()
+	}()
+
+	time.Sleep(2 * time.Second)
+	return cmd, nil
 }
 
 // DataFromBWItem has the goal to convert data from a Bitwarden item to be ready
