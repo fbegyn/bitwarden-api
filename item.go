@@ -49,6 +49,9 @@ type ItemCreateResp struct {
 
 func (bw *BitwardenClient) CreateItem(item Item) error {
 	jsonItem, err := json.Marshal(item)
+	if err != nil {
+		return fmt.Errorf("failed to marshal Item object: %w", err)
+	}
 	req, err := http.NewRequest("POST", bw.BaseURL+"/object/item", bytes.NewBuffer(jsonItem))
 	if err != nil {
 		return fmt.Errorf("failed to create create request: %w", err)
@@ -102,6 +105,9 @@ type ItemUpdateResp struct {
 
 func (bw *BitwardenClient) UpdateItem(item Item) error {
 	jsonItem, err := json.Marshal(item)
+	if err != nil {
+		return fmt.Errorf("failed to marshal Item object: %w", err)
+	}
 	req, err := http.NewRequest("PUT", bw.BaseURL+"/object/item/"+item.ID, bytes.NewBuffer(jsonItem))
 	if err != nil {
 		return fmt.Errorf("failed to create update request: %w", err)
@@ -126,6 +132,9 @@ type ItemDeleteResp struct {
 
 func (bw *BitwardenClient) DeleteItem(item Item) error {
 	jsonItem, err := json.Marshal(item)
+	if err != nil {
+		return fmt.Errorf("failed to marshal Item object: %w", err)
+	}
 	req, err := http.NewRequest("DELETE", bw.BaseURL+"/object/item/"+item.ID, bytes.NewBuffer(jsonItem))
 	if err != nil {
 		return fmt.Errorf("failed to create delete request: %w", err)
