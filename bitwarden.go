@@ -25,20 +25,20 @@ func StartBWServe(ctx context.Context) (*exec.Cmd, error) {
 
 // DataFromBWItem has the goal to convert data from a Bitwarden item to be ready
 // to be inserted into Vault
-func DataFromBWItem(resp map[string]interface{}) (map[string]interface{}, error) {
+func DataFromBWItem(item Item) (map[string]interface{}, error) {
 	data := make(map[string]interface{})
-	if resp["login"] != nil {
-		login := resp["login"].(map[string]interface{})
-		if login["username"] != nil {
-			data["username"] = login["username"]
-		} else {
-			return nil, fmt.Errorf("bw item has no username")
-		}
-		if login["password"] != nil {
-			data["password"] = login["password"]
-		} else {
-			return nil, fmt.Errorf("bw item has no password")
-		}
+
+	if item.Login.Password == "" {
+		return nil, fmt.Errorf("bw item has no password")
+	}
+	data["password"] = item.Login.Password
+	if item.Login.Username == "" {
+		return nil, fmt.Errorf("bw item has no username")
+	}
+	data["username"] = item.Login.Username
+
+	for _, field := range item.Fields {
+		data[field.Name] = field.Value
 	}
 	return data, nil
 }
